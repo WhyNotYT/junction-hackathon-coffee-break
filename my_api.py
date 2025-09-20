@@ -8,6 +8,7 @@ app = FastAPI(title="My Ollama API", version="1.0.0")
 class ChatRequest(BaseModel):
     message: str
     model: str = "gpt-oss:20b"
+    device="cuda"
 
 class ChatResponse(BaseModel):
     response: str
