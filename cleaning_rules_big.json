@@ -1,0 +1,72 @@
+{
+  "Unnamed: 0": [
+    1,
+    null,
+    0.2
+  ],
+  "SeriousDlqin2yrs": [
+    0,
+    1,
+    0.9
+  ],
+  "RevolvingUtilizationOfUnsecuredLines": [
+    0,
+    1,
+    0.8
+  ],
+  "age": [
+    0,
+    120,
+    0.85
+  ],
+  "NumberOfTime30-59DaysPastDueNotWorse": [
+    0,
+    null,
+    0.4
+  ],
+  "DebtRatio": [
+    0,
+    1,
+    0.95
+  ],
+  "MonthlyIncome": [
+    0,
+    null,
+    0.3
+  ],
+  "NumberOfOpenCreditLinesAndLoans": [
+    0,
+    null,
+    0.4
+  ],
+  "NumberOfTimes90DaysLate": [
+    0,
+    null,
+    0.4
+  ],
+  "NumberRealEstateLoansOrLines": [
+    0,
+    null,
+    0.4
+  ],
+  "NumberOfTime60-89DaysPastDueNotWorse": [
+    0,
+    null,
+    0.4
+  ],
+  "NumberOfDependents": [
+    0,
+    null,
+    0.4
+  ],
+  "Unnamed: 1": [
+    null,
+    null,
+    0.1
+  ],
+  "Unnamed: 2": [
+    null,
+    null,
+    0.1
+  ]
+}
