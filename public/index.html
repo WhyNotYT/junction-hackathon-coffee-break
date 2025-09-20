@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nordea AI Data Quality CoPilot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/footer.css">
+    <link rel="stylesheet" href="css/fonts.css">
+    <link rel="stylesheet" href="css/buttons.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/chat.css"> <!-- chat UI styles -->
+
+    <!-- Chart.js and D3.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <style>
+        /* ======================== Chat Styles ======================== */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .chat-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        .user-message {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            margin-left: 50px;
+            text-align: right;
+            color: white;
+        }
+        .bot-message {
+            background: rgba(255, 255, 255, 0.1);
+            margin-right: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        input[type="text"], input[type="url"], select {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid rgba(0,0,0,0.2);
+            border-radius: 25px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            color: #4facfe;
+            font-style: italic;
+        }
+        .error {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .loading { animation: pulse 1.5s infinite; }
+    </style>
+</head>
+<body>
+<!-- Header -->
+<header>
+    <img src="assets/logo.svg" alt="Nordea Logo" class="logo">
+    <h1>AI Data Quality CoPilot</h1>
+</header>
+
+<!-- Upload Section -->
+<section id="upload">
+    <h2>Upload Dataset</h2>
+    <input type="file" id="fileUpload" />
+    <button class="btn-primary">Connect Database</button>
+</section>
+
+<!-- Chat Section -->
+<section id="ollama-chat">
+    <div class="container">
+        <h2>🤖 Chat Assistant</h2>
+
+        <!-- Keep config in HTML but hide it -->
+        <div class="config" style="display: none;">
+            <input type="url" id="apiUrl" placeholder="API URL (e.g., http://127.0.0.1:8000)" value="https://irnfnv-ip-130-231-176-211.tunnelmole.net">
+            <select id="modelSelect">
+                <option value="gemma3:4b">gemma3:4b</option>
+            </select>
+            <button onclick="loadModels()">Refresh Models</button>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message bot-message">
+                👋 Hello! I'm ready to chat. What would you like to talk about?
+            </div>
+        </div>
+
+        <div class="loading" id="loading">🤔 Thinking...</div>
+
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="Type your message here..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()" id="sendBtn">Send 🚀</button>
+        </div>
+
+        <div id="errorContainer"></div>
+    </div>
+</section>
+
+<!-- Dashboard Section -->
+<section id="dashboard">
+    <h2>Data Quality Summary</h2>
+    <div id="summary"></div>
+
+    <h3>Anomalies Detected</h3>
+    <table id="anomaliesTable"></table>
+
+    <h3>Missing Values by Column</h3>
+    <canvas id="missingChart"></canvas>
+
+    <h3>Data Trend with Anomalies</h3>
+    <svg id="trendChart" width="600" height="300"></svg>
+</section>
+
+<!-- Footer -->
+<footer>
+    <p>&copy; 2025 Nordea Hackathon Team</p>
+</footer>
+
+<!-- Scripts -->
+<script src="js/charts.js"></script>
+<script src="js/main.js"></script>
+
+<script>
+    // ===== Chat Logic =====
+    const chatContainer = document.getElementById('chatContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const loading = document.getElementById('loading');
+    const errorContainer = document.getElementById('errorContainer');
+    const apiUrl = document.getElementById('apiUrl');
+    const modelSelect = document.getElementById('modelSelect');
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') sendMessage();
+    }
+
+    function addMessage(content, isUser=false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+        messageDiv.innerHTML = isUser ? `👤 ${content}` : `🤖 ${content}`;
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function showError(message) {
+        errorContainer.innerHTML = `<div class="error">❌ ${message}</div>`;
+        setTimeout(() => { errorContainer.innerHTML = ''; }, 5000);
+    }
+
+    function setLoading(isLoading) {
+        loading.style.display = isLoading ? 'block' : 'none';
+        sendBtn.disabled = isLoading;
+        sendBtn.textContent = isLoading ? 'Sending...' : 'Send 🚀';
+    }
+
+    async function sendMessage() {
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        const currentApiUrl = apiUrl.value || 'http://127.0.0.1:8000/';
+        const selectedModel = modelSelect.value;
+
+        addMessage(message, true);
+        messageInput.value = '';
+        setLoading(true);
+
+        try {
+            const response = await fetch(`${currentApiUrl}/chat`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ message, model: selectedModel })
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            addMessage(data.response);
+
+        } catch (error) {
+            console.error(error);
+            showError(`Failed to send message: ${error.message}`);
+            addMessage("Sorry, I'm having trouble connecting to the server. Please check the API URL and try again.");
+        } finally { setLoading(false); }
+    }
+
+    async function loadModels() {
+        const currentApiUrl = apiUrl.value || 'http://127.0.0.1:8000';
+        try {
+            const response = await fetch(`${currentApiUrl}/models`);
+            if (!response.ok) throw new Error('Failed to load models');
+            const data = await response.json();
+
+            modelSelect.innerHTML = '';
+            data.models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelSelect.appendChild(option);
+            });
+
+        } catch (error) {
+            showError(`Failed to load models: ${error.message}`);
+        }
+    }
+
+    window.onload = () => { loadModels(); };
+</script>
+</body>
+</html>

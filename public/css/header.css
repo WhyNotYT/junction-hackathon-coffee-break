@@ -1,0 +1,11 @@
+header {
+    background-color: #00205B;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+}
+header .logo {
+    height: 40px;
+    margin-right: 15px;
+}

@@ -1,0 +1,17 @@
+{
+  "summary": {
+    "anomalies": 3,
+    "suggestions": 5
+  },
+  "issues": [
+    {"column": "loan_amount", "issue": "Negative values detected", "confidence": 0.95, "fix": "Set negatives to NULL"},
+    {"column": "employment_length", "issue": "Many missing values", "confidence": 0.88, "fix": "Impute with median"},
+    {"column": "birthdate", "issue": "Out of range (year > 2100)", "confidence": 0.99, "fix": "Cap at 2025"}
+  ],
+  "missing": {
+    "loan_amount": 5,
+    "employment_length": 20,
+    "birthdate": 2
+  },
+  "trend": [100, 110, 120, 500, 130, 125, 140]
+}
