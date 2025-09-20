@@ -7,22 +7,20 @@ app = FastAPI(title="My Ollama API", version="1.0.0")
 
 class ChatRequest(BaseModel):
     message: str
-    model: str = "gemmma3:4b"
-    
+    model: str = "gemma3:4b"  
 
 class ChatResponse(BaseModel):
     response: str
     model: str
-    
 
 # Fix CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://127.0.0.1:8000",
-        "https://nordxgpt.vercel.app",  # Remove trailing slash
-        "https://qbhhpr-ip-130-231-176-211.tunnelmole.net/",
-        "http://localhost:8000",  # For local testing
+        "http://127.0.0.1:8000",  # Remove /docs
+        "https://nordxgpt.vercel.app",
+        "https://qbhhpr-ip-130-231-176-211.tunnelmole.net",  # Remove /docs
+        "http://localhost:8000",
         "*"  # Allow all origins for testing (remove in production)
     ],
     allow_credentials=True,
