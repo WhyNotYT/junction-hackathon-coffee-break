@@ -12,7 +12,7 @@ Aisti ("sensory" in Finnish) revolutionizes data cleaning by transforming datase
 git clone https://github.com/WhyNotYT/junction-hackathon-coffee-break
 ```
 
-Put your data in the `Dataset/` folder as `data.csv` and `description.csv`.
+Put your data in the `Dataset/` folder as `data.csv` and `description.csv`. Or you can just visit `public/index.html`, currently, it contains procssed data from the GiveMeSomeCredit dataset.
 
 ```
 ./run.sh
