@@ -6,7 +6,6 @@ import ollama  # Make sure ollama Python package is installed
 
 app = FastAPI(title="My Ollama API", version="1.0.0")
 
-# ====================== Models ======================
 class ChatRequest(BaseModel):
     message: str
     model: str = "gemma3:4b"
@@ -15,7 +14,7 @@ class ChatResponse(BaseModel):
     response: str
     model: str
 
-# ====================== CORS ======================
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -30,7 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ====================== Routes ======================
+
 @app.get("/")
 async def root():
     return {"message": "Ollama FastAPI server is running!"}
@@ -53,7 +52,6 @@ async def list_models():
 async def chat_with_ollama(request: ChatRequest):
     """Chat with Ollama gemma3:4b"""
     try:
-        # Force model to gemma3:4b
         response = ollama.chat(
             model="gemma3:4b",
             messages=[{"role": "user", "content": request.message}]
