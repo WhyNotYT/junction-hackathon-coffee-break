@@ -1,6 +1,6 @@
 import pandas as pd
 import json
-from groq import Groq
+import requests
 from typing import Dict, List, Tuple, Optional
 import logging
 import chardet
@@ -18,18 +18,22 @@ logger = logging.getLogger(__name__)
 
 class CSVDataAnalyzer:
     """
-    Analyzes CSV data and generates cleaning rules using Groq API LLM.
+    Analyzes CSV data and generates cleaning rules using Ollama API.
     """
     
-    def __init__(self, groq_api_key: str):
+    def __init__(self, ollama_base_url: str, model_name: str = "llama3.2"):
         """
-        Initialize the analyzer with Groq API key.
+        Initialize the analyzer with Ollama configuration.
         
         Args:
-            groq_api_key (str): Your Groq API key
+            ollama_base_url (str): Base URL of your Ollama instance
+            model_name (str): Name of the model to use (default: "llama3.2")
         """
-        self.client = Groq(api_key=groq_api_key)
-        self.model = "llama-3.1-8b-instant"  # Default Groq model
+        self.base_url = ollama_base_url.rstrip('/')
+        if self.base_url.endswith('/docs'):
+            self.base_url = self.base_url[:-5]  # Remove /docs if present
+        self.model = model_name
+        self.api_url = f"{self.base_url}/generate"
         
     def read_description_csv(self, description_file_path: str) -> pd.DataFrame:
         try:
@@ -178,9 +182,9 @@ Analyze ALL columns in the headers list and provide the JSON output:
 """
         return prompt
     
-    def query_groq_api(self, prompt: str) -> str:
+    def query_ollama_api(self, prompt: str) -> str:
         """
-        Send prompt to Groq API and get response.
+        Send prompt to Ollama API and get response.
         
         Args:
             prompt (str): The prompt to send to the LLM
@@ -189,24 +193,40 @@ Analyze ALL columns in the headers list and provide the JSON output:
             str: LLM response
         """
         try:
-            chat_completion = self.client.chat.completions.create(
-                messages=[
-                    {
-                        "role": "user",
-                        "content": prompt,
-                    }
-                ],
-                model=self.model,
-                temperature=0.1,  # Low temperature for consistent results
-                max_tokens=2048,
+            payload = {
+                "model": self.model,
+                "message": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.1,  # Low temperature for consistent results
+                    "num_predict": 2048  # Maximum tokens
+                }
+            }
+            
+            logger.info(f"Sending request to Ollama at {self.api_url}")
+            response = requests.post(
+                self.api_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=300  # 5 minute timeout for large prompts
             )
             
-            response = chat_completion.choices[0].message.content
-            logger.info("Successfully received response from Groq API")
-            return response
+            response.raise_for_status()  # Raise an exception for bad status codes
             
+            response_json = response.json()
+            
+            if "response" not in response_json:
+                raise ValueError(f"Unexpected response format: {response_json}")
+            
+            llm_response = response_json["response"]
+            logger.info("Successfully received response from Ollama API")
+            return llm_response
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error connecting to Ollama API: {str(e)}")
+            raise
         except Exception as e:
-            logger.error(f"Error querying Groq API: {str(e)}")
+            logger.error(f"Error querying Ollama API: {str(e)}")
             raise
     
     def parse_llm_response(self, response: str) -> Dict:
@@ -266,8 +286,8 @@ Analyze ALL columns in the headers list and provide the JSON output:
         # Step 4: Create analysis prompt with filtered descriptions
         prompt = self.create_analysis_prompt(filtered_description_df, sample_df, headers)
         
-        # Step 5: Query Groq API
-        response = self.query_groq_api(prompt)
+        # Step 5: Query Ollama API
+        response = self.query_ollama_api(prompt)
         
         # Step 6: Parse response
         cleaning_rules = self.parse_llm_response(response)
@@ -281,17 +301,18 @@ def main():
     Example usage of the CSVDataAnalyzer class.
     This function demonstrates how to use the analyzer.
     """
-    # Replace with your actual Groq API key
-    GROQ_API_KEY = "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"
+    # Your Ollama instance URL
+    OLLAMA_BASE_URL = "https://qbhhpr-ip-130-231-176-211.tunnelmole.net"
+    MODEL_NAME = "gemma3:4b"  # Change this to your preferred model
     
     # Initialize analyzer
-    analyzer = CSVDataAnalyzer(GROQ_API_KEY)
+    analyzer = CSVDataAnalyzer(OLLAMA_BASE_URL, MODEL_NAME)
     
     try:
         # Analyze CSV data
         # Replace these with your actual file paths
-        description_file = "Datasets/home-credit-default-risk/HomeCredit_columns_description.csv"
-        data_file = "Datasets/home-credit-default-risk/credit_card_balance.csv"
+        description_file = "Dataset/description.csv"
+        data_file = "Dataset/data.csv"
         
         cleaning_rules = analyzer.analyze_csv_data(description_file, data_file)
         

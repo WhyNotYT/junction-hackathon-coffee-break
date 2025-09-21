@@ -1,7 +1,7 @@
 import os
 import glob
 
-def trim_csv_files(folder_path, max_lines=15000):
+def trim_csv_files(folder_path, max_lines=20000):
     # Get all csv files in the given folder
     csv_files = glob.glob(os.path.join(folder_path, "*.csv"))
 
@@ -19,5 +19,5 @@ def trim_csv_files(folder_path, max_lines=15000):
             print(f"{file_path} already has {len(lines)} lines, no trimming needed.")
 
 if __name__ == "__main__":
-    folder = input("Enter the folder path containing CSV files: ").strip()
-    trim_csv_files(folder)
+    # folder = input("Enter the folder path containing CSV files: ").strip()
+    trim_csv_files("output")
